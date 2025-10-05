@@ -1,0 +1,66 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+
+-- Variables de activación
+local AUTOESCUDO_ENABLED = false
+local AUTOWALL_ENABLED = false
+
+-- Remote ficticio (créalo en ReplicatedStorage con ese nombre)
+local WallComboEvent = ReplicatedStorage:FindFirstChild("WallComboEvent")
+
+-- Crear GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "JonnitoHubUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local function createButton(name, posY, callback)
+	local button = Instance.new("TextButton")
+	button.Size = UDim2.new(0, 180, 0, 40)
+	button.Position = UDim2.new(0, 20, 0, posY)
+	button.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	button.Font = Enum.Font.SourceSansBold
+	button.TextSize = 18
+	button.Text = name
+	button.Parent = screenGui
+	button.MouseButton1Click:Connect(callback)
+end
+
+-- Botón Autoescudo
+createButton("Toggle AutoEscudo", 100, function()
+	AUTOESCUDO_ENABLED = not AUTOESCUDO_ENABLED
+	print("[JonnitoHub] Autoescudo activado: " .. tostring(AUTOESCUDO_ENABLED))
+end)
+
+-- Botón Autowall
+createButton("Toggle AutoWall", 150, function()
+	AUTOWALL_ENABLED = not AUTOWALL_ENABLED
+	print("[JonnitoHub] Autowall activado: " .. tostring(AUTOWALL_ENABLED))
+end)
+
+-- Autoescudo (simulación)
+RunService.RenderStepped:Connect(function()
+	if AUTOESCUDO_ENABLED and character:FindFirstChild("Humanoid") then
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		humanoid.WalkSpeed = 16 -- correr normal
+		-- Si hay un valor "Blocking", lo activamos
+		if character:FindFirstChild("Blocking") then
+			character.Blocking.Value = true
+		end
+	end
+end)
+
+-- Autowall loop
+task.spawn(function()
+	while true do
+		if AUTOWALL_ENABLED and WallComboEvent then
+			WallComboEvent:FireServer()
+		end
+		task.wait(0.5) -- intervalo de ataque
+	end
+end)
